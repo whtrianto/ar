@@ -78,10 +78,11 @@ function ModelViewer({ selectedModel, onModelSelect }) {
       <div className="model-viewer-content">
         {selectedModel ? (
           <div className="model-container">
-            <Canvas
-              camera={{ position: [0, 0, 5], fov: 50 }}
-              style={{ width: '100%', height: '500px', backgroundColor: '#f0f0f0' }}
-            >
+            <div style={{ width: '100%', flex: 1 }}>
+              <Canvas
+                camera={{ position: [0, 0, 5], fov: 50 }}
+                style={{ width: '100%', height: '100%' }}
+              >
               <ambientLight intensity={0.5} />
               <directionalLight position={[10, 10, 5]} intensity={1} />
               <Environment preset="studio" />
@@ -105,7 +106,8 @@ function ModelViewer({ selectedModel, onModelSelect }) {
                 minDistance={2}
                 maxDistance={10}
               />
-            </Canvas>
+              </Canvas>
+            </div>
 
             {isLoading && (
               <div className="loading-overlay">

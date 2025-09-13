@@ -93,6 +93,7 @@ body {
   border-radius: 3px;
   background: #e1e5e9;
   outline: none;
+  appearance: none;
   -webkit-appearance: none;
 }
 
