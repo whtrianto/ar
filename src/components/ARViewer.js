@@ -60,8 +60,19 @@ function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack 
     checkXR();
   }, []);
 
+  // Diagnostics for debugging blank AR on mobile
+  const diagnostics = {
+    navigatorXR: !!(navigator && navigator.xr),
+    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+    protocol: typeof window !== 'undefined' ? window.location.protocol : 'unknown',
+    isARSupported: isARSupported,
+    arStatusMessage: arStatusMessage
+  };
+
   const startAR = async () => {
     if (!selectedModel) return;
+  // eslint-disable-next-line no-console
+  console.debug('Start AR clicked', diagnostics);
     setIsARActive(true);
   };
 
@@ -160,6 +171,17 @@ function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack 
                   <h3>Ready for AR</h3>
                   <p>Placement Mode: <strong>{placementMode}</strong></p>
                   <p className="instructions">{placementInstructions}</p>
+
+                      <div style={{ marginTop: 12, textAlign: 'left', background: 'rgba(255,255,255,0.06)', padding: 8, borderRadius: 8 }}>
+                        <strong>Diagnostics</strong>
+                        <div style={{ fontSize: 12, color: '#fff', marginTop: 6 }}>
+                          <div>navigator.xr: {String(diagnostics.navigatorXR)}</div>
+                          <div>isARSupported: {String(diagnostics.isARSupported)}</div>
+                          <div>protocol: {diagnostics.protocol}</div>
+                          <div style={{ wordBreak: 'break-word' }}>UA: {diagnostics.userAgent}</div>
+                          <div>Status: {diagnostics.arStatusMessage}</div>
+                        </div>
+                      </div>
                   
                   {isDesktop ? (
                     <div className="desktop-ar-options">
