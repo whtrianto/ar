@@ -227,42 +227,14 @@ function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack 
       <div className="ar-content">
         {selectedModel ? (
           <div className="ar-model-container">
-            {showPreview && isDesktop ? (
-              <Canvas
-                camera={{ position: [0, 0, 5], fov: 50 }}
-                style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
-              >
-                <ambientLight intensity={0.5} />
-                <directionalLight position={[10, 10, 5]} intensity={1} />
-                <Environment preset="studio" />
-                <ContactShadows 
-                  position={[0, -1, 0]} 
-                  opacity={0.25} 
-                  scale={10} 
-                  blur={1.5} 
-                  far={4} 
-                />
-                <ARModel 
-                  url={selectedModel.url}
-                  position={modelPosition}
-                  rotation={[0, 0, 0]}
-                  scale={[1, 1, 1]}
-                />
-                <OrbitControls 
-                  enablePan={true}
-                  enableZoom={true}
-                  enableRotate={true}
-                  minDistance={2}
-                  maxDistance={10}
-                />
-              </Canvas>
-            ) : (
-              <ARCanvas
-                camera={{ position: [0, 0, 5], fov: 50 }}
-                style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
-                onSessionStart={handleSessionStart}
-                onSessionEnd={handleSessionEnd}
-              >
+            {isARActive ? (
+              <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                <ARCanvas
+                  camera={{ position: [0, 0, 5], fov: 50 }}
+                  style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
+                  onSessionStart={handleSessionStart}
+                  onSessionEnd={handleSessionEnd}
+                >
                 <ambientLight intensity={0.5} />
                 <directionalLight position={[10, 10, 5]} intensity={1} />
                 <Environment preset="studio" />
@@ -294,10 +266,90 @@ function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack 
                   onSessionEnd={handleSessionEnd}
                   isARActive={isARActive}
                 />
-              </ARCanvas>
+                </ARCanvas>
+                <div style={{ 
+                  position: 'absolute', 
+                  top: '20px', 
+                  left: '20px', 
+                  zIndex: 1000 
+                }}>
+                  <XRButton
+                    mode="AR"
+                    sessionInit={{
+                      requiredFeatures: ['local-floor'],
+                      optionalFeatures: ['bounded-floor', 'hand-tracking']
+                    }}
+                    style={{
+                      background: '#667eea',
+                      color: 'white',
+                      border: 'none',
+                      padding: '10px 20px',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '16px',
+                      fontWeight: '600'
+                    }}
+                  >
+                    Enter AR
+                  </XRButton>
+                </div>
+              </div>
+            ) : showPreview && isDesktop ? (
+              <Canvas
+                camera={{ position: [0, 0, 5], fov: 50 }}
+                style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
+              >
+                <ambientLight intensity={0.5} />
+                <directionalLight position={[10, 10, 5]} intensity={1} />
+                <Environment preset="studio" />
+                <ContactShadows 
+                  position={[0, -1, 0]} 
+                  opacity={0.25} 
+                  scale={10} 
+                  blur={1.5} 
+                  far={4} 
+                />
+                <ARModel 
+                  url={selectedModel.url}
+                  position={modelPosition}
+                  rotation={[0, 0, 0]}
+                  scale={[1, 1, 1]}
+                />
+                <OrbitControls 
+                  enablePan={true}
+                  enableZoom={true}
+                  enableRotate={true}
+                  minDistance={2}
+                  maxDistance={10}
+                />
+              </Canvas>
+            ) : (
+              <div style={{ 
+                width: '100%', 
+                height: '100%', 
+                backgroundColor: '#000', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: '18px'
+              }}>
+                <div style={{ textAlign: 'center' }}>
+                  <h3>AR Ready</h3>
+                  <p>Click "Start AR Experience" to begin</p>
+                  <div style={{ marginTop: '20px', fontSize: '14px', color: '#ccc' }}>
+                    <p>Debug Info:</p>
+                    <p>isARActive: {String(isARActive)}</p>
+                    <p>isDesktop: {String(isDesktop)}</p>
+                    <p>showPreview: {String(showPreview)}</p>
+                    <p>isARSupported: {String(isARSupported)}</p>
+                    <p>cameraPermission: {String(cameraPermission)}</p>
+                  </div>
+                </div>
+              </div>
             )}
 
-            {!isARActive && !showPreview && (
+            {!isARActive && !showPreview && selectedModel && (
               <div className="ar-start-overlay">
                 <div className="ar-start-content">
                   <h3>Ready for AR</h3>
@@ -357,13 +409,13 @@ function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack 
                     </div>
                   ) : (
                     <div>
-                      <XRButton
+                      <button
                         className="start-ar-button"
                         onClick={startAR}
                         disabled={!isARSupported || cameraPermission === false}
                       >
                         {cameraPermission === false ? 'Camera Permission Required' : 'Start AR Experience'}
-                      </XRButton>
+                      </button>
                       {!isARSupported && (
                         <div className="status-message" style={{ marginTop: '8px' }}>{arStatusMessage}</div>
                       )}
