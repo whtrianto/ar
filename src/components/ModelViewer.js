@@ -1,34 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, useGLTF } from '@react-three/drei';
-import * as THREE from 'three';
 
-const SAMPLE_MODELS = [
-  {
-    id: 'chair-1',
-    name: 'Modern Chair',
-    url: '/models/sample-chair.glb',
-    description: 'Kursi modern dengan desain minimalis',
-    category: 'furniture',
-    arPlacement: 'floor'
-  },
-  {
-    id: 'lamp-1',
-    name: 'Table Lamp',
-    url: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb',
-    description: 'Lampu meja dengan desain modern',
-    category: 'lighting',
-    arPlacement: 'floor'
-  },
-  {
-    id: 'picture-1',
-    name: 'Wall Art',
-    url: 'https://modelviewer.dev/shared-assets/models/NeilArmstrong.glb',
-    description: 'Lukisan dinding untuk dekorasi',
-    category: 'decoration',
-    arPlacement: 'wall'
-  }
-];
+// Sample models moved to ModelGallery component
 
 function Model({ url, position, rotation, scale }) {
   const { scene } = useGLTF(url);

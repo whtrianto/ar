@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import React, { useState, useEffect } from 'react';
+import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, useGLTF } from '@react-three/drei';
 import { ARCanvas, XRButton, DefaultXRControllers, Hands } from '@react-three/xr';
 
@@ -18,7 +18,6 @@ function ARModel({ url, position, rotation, scale }) {
 
 function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack }) {
   const [isARActive, setIsARActive] = useState(false);
-  const [arSession, setArSession] = useState(null);
   const [placementInstructions, setPlacementInstructions] = useState('');
   const [modelPosition, setModelPosition] = useState([0, 0, -2]);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -41,12 +40,10 @@ function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack 
   const startAR = async () => {
     if (!selectedModel) return;
     setIsARActive(true);
-    setArSession(true);
   };
 
   const stopAR = () => {
     setIsARActive(false);
-    setArSession(null);
   };
 
   const handlePlacementModeChange = (mode) => {
