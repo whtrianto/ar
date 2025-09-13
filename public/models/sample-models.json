@@ -1,0 +1,46 @@
+[
+  {
+    "id": "chair-1",
+    "name": "Modern Chair",
+    "description": "Kursi modern dengan desain minimalis",
+    "category": "furniture",
+    "url": "/models/chair.glb",
+    "thumbnail": "/models/thumbnails/chair.jpg",
+    "scale": 1.0,
+    "position": { "x": 0, "y": 0, "z": 0 },
+    "rotation": { "x": 0, "y": 0, "z": 0 }
+  },
+  {
+    "id": "table-1",
+    "name": "Dining Table",
+    "description": "Meja makan untuk 4 orang",
+    "category": "furniture",
+    "url": "/models/table.glb",
+    "thumbnail": "/models/thumbnails/table.jpg",
+    "scale": 1.0,
+    "position": { "x": 0, "y": 0, "z": 0 },
+    "rotation": { "x": 0, "y": 0, "z": 0 }
+  },
+  {
+    "id": "sofa-1",
+    "name": "L-Shaped Sofa",
+    "description": "Sofa berbentuk L dengan bantal empuk",
+    "category": "furniture",
+    "url": "/models/sofa.glb",
+    "thumbnail": "/models/thumbnails/sofa.jpg",
+    "scale": 1.0,
+    "position": { "x": 0, "y": 0, "z": 0 },
+    "rotation": { "x": 0, "y": 0, "z": 0 }
+  },
+  {
+    "id": "lamp-1",
+    "name": "Floor Lamp",
+    "description": "Lampu lantai dengan desain modern",
+    "category": "lighting",
+    "url": "/models/lamp.glb",
+    "thumbnail": "/models/thumbnails/lamp.jpg",
+    "scale": 1.0,
+    "position": { "x": 0, "y": 0, "z": 0 },
+    "rotation": { "x": 0, "y": 0, "z": 0 }
+  }
+]
