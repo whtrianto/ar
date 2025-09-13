@@ -18,7 +18,7 @@ function App() {
         const isSecureContext = window.isSecureContext || window.location.hostname === 'localhost';
         
         if (!isSecureContext) {
-          setStatusMessage('WebXR memerlukan HTTPS. Silakan gunakan HTTPS atau localhost untuk testing.');
+          setStatusMessage('WebXR requires HTTPS. Please use HTTPS or localhost for testing.');
           return;
         }
 
@@ -26,16 +26,15 @@ function App() {
           const supported = await navigator.xr.isSessionSupported('immersive-ar');
           setIsWebXRSupported(supported);
           if (!supported) {
-            setStatusMessage('WebXR AR tidak didukung di browser ini. Silakan gunakan Chrome mobile atau ARCore/ARKit compatible browser.');
+            setStatusMessage('WebXR AR not supported in this browser. Please use Chrome mobile or ARCore/ARKit compatible browser.');
           } else {
-            setStatusMessage('WebXR AR didukung! Anda dapat menggunakan mode AR.');
+            setStatusMessage('WebXR AR supported! You can use AR mode.');
           }
         } else {
-          setStatusMessage('WebXR tidak didukung di browser ini. Silakan gunakan Chrome mobile atau ARCore/ARKit compatible browser.');
+          setStatusMessage('WebXR not supported in this browser. Please use Chrome mobile or ARCore/ARKit compatible browser.');
         }
       } catch (error) {
-        // Log minimally without triggering ESLint "no-console" in CI/build
-        setStatusMessage('WebXR tidak dapat diakses. Pastikan menggunakan HTTPS dan browser yang mendukung WebXR.');
+        setStatusMessage('WebXR cannot be accessed. Please ensure you are using HTTPS and a WebXR compatible browser.');
       }
     };
 
@@ -49,7 +48,7 @@ function App() {
 
   const handleARModeToggle = () => {
     if (!selectedModel) {
-      setStatusMessage('Pilih model 3D terlebih dahulu sebelum masuk ke mode AR');
+      setStatusMessage('Please select a 3D model first before entering AR mode');
       return;
     }
     setIsARMode(!isARMode);

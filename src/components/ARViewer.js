@@ -1,19 +1,36 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, useGLTF } from '@react-three/drei';
-import { ARCanvas, XRButton, DefaultXRControllers, Hands } from '@react-three/xr';
+import { ARCanvas, XRButton, DefaultXRControllers, Hands, useXR } from '@react-three/xr';
+import { ARPlacement } from './ARPlacement';
 
-function ARModel({ url, position, rotation, scale }) {
+function ARModel({ url, position, rotation, scale, isARActive }) {
   const { scene } = useGLTF(url);
+  const meshRef = useRef();
   
   return (
     <primitive 
+      ref={meshRef}
       object={scene} 
       position={position} 
       rotation={rotation} 
       scale={scale}
     />
   );
+}
+
+function ARSessionManager({ onSessionStart, onSessionEnd, isARActive }) {
+  const { isPresenting, isLocal } = useXR();
+  
+  useEffect(() => {
+    if (isPresenting && isLocal) {
+      onSessionStart();
+    } else if (!isPresenting && isARActive) {
+      onSessionEnd();
+    }
+  }, [isPresenting, isLocal, isARActive, onSessionStart, onSessionEnd]);
+  
+  return null;
 }
 
 function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack }) {
@@ -24,6 +41,10 @@ function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack 
   const [showPreview, setShowPreview] = useState(false);
   const [isARSupported, setIsARSupported] = useState(false);
   const [arStatusMessage, setArStatusMessage] = useState('');
+  const [isSessionActive, setIsSessionActive] = useState(false);
+  const [cameraPermission, setCameraPermission] = useState(null);
+  const [arError, setArError] = useState(null);
+  const [isModelPlaced, setIsModelPlaced] = useState(false);
 
   useEffect(() => {
     // Check if desktop
@@ -40,20 +61,44 @@ function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack 
   }, [placementMode]);
 
   useEffect(() => {
-    // Detect WebXR support for AR
+    // Detect WebXR support for AR and camera permission
     const checkXR = async () => {
       try {
+        // Check if we're in a secure context
+        if (!window.isSecureContext && window.location.hostname !== 'localhost') {
+          setIsARSupported(false);
+          setArStatusMessage('AR requires HTTPS. Please use HTTPS or localhost for testing.');
+          return;
+        }
+
+        // Check WebXR support
         if (navigator.xr && navigator.xr.isSessionSupported) {
           const supported = await navigator.xr.isSessionSupported('immersive-ar');
           setIsARSupported(supported);
-          setArStatusMessage(supported ? 'WebXR AR supported' : 'WebXR AR not supported');
+          
+          if (supported) {
+            setArStatusMessage('WebXR AR supported! Ready to start AR experience.');
+            
+            // Check camera permission
+            try {
+              const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+              setCameraPermission(true);
+              stream.getTracks().forEach(track => track.stop()); // Stop the stream immediately
+            } catch (cameraErr) {
+              setCameraPermission(false);
+              setArStatusMessage('Camera access required for AR. Please allow camera permission.');
+            }
+          } else {
+            setArStatusMessage('WebXR AR not supported on this device. Please use a compatible mobile device.');
+          }
         } else {
           setIsARSupported(false);
-          setArStatusMessage('WebXR not available in this browser');
+          setArStatusMessage('WebXR not available in this browser. Please use Chrome mobile or ARCore/ARKit compatible browser.');
         }
       } catch (err) {
         setIsARSupported(false);
         setArStatusMessage('Error detecting WebXR: ' + (err.message || err));
+        setArError(err.message || 'Unknown error');
       }
     };
 
@@ -66,22 +111,88 @@ function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack 
     userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
     protocol: typeof window !== 'undefined' ? window.location.protocol : 'unknown',
     isARSupported: isARSupported,
-    arStatusMessage: arStatusMessage
+    arStatusMessage: arStatusMessage,
+    cameraPermission: cameraPermission,
+    isSecureContext: window.isSecureContext
+  };
+
+  const handleSessionStart = () => {
+    setIsSessionActive(true);
+    setArError(null);
+    setIsModelPlaced(false); // Reset placement when starting new session
+    console.log('AR Session started');
+  };
+
+  const handleSessionEnd = () => {
+    setIsSessionActive(false);
+    setIsARActive(false);
+    setIsModelPlaced(false);
+    setArError(null);
+    console.log('AR Session ended');
   };
 
   const startAR = async () => {
-    if (!selectedModel) return;
-  // eslint-disable-next-line no-console
-  console.debug('Start AR clicked', diagnostics);
-    setIsARActive(true);
+    if (!selectedModel) {
+      setArError('Please select a model first');
+      return;
+    }
+    
+    try {
+      setArError(null);
+      
+      // Check WebXR support
+      if (!isARSupported) {
+        setArError('WebXR AR is not supported on this device. Please use a compatible mobile device with Chrome or ARCore/ARKit support.');
+        return;
+      }
+      
+      // Check camera permission again before starting AR
+      if (cameraPermission === false) {
+        setArError('Camera access is required for AR. Please allow camera permission and try again.');
+        return;
+      }
+      
+      // Check secure context
+      if (!window.isSecureContext && window.location.hostname !== 'localhost') {
+        setArError('AR requires HTTPS. Please use HTTPS or localhost for testing.');
+        return;
+      }
+      
+      // eslint-disable-next-line no-console
+      console.debug('Start AR clicked', diagnostics);
+      setIsARActive(true);
+    } catch (error) {
+      setArError('Failed to start AR: ' + error.message);
+      console.error('AR start error:', error);
+    }
   };
 
   const stopAR = () => {
     setIsARActive(false);
+    setIsSessionActive(false);
+    setIsModelPlaced(false);
+    setArError(null);
+    console.log('AR stopped by user');
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (isARActive) {
+        stopAR();
+      }
+    };
+  }, []);
 
   const handlePlacementModeChange = (mode) => {
     onPlacementModeChange(mode);
+    setIsModelPlaced(false); // Reset placement when changing mode
+  };
+
+  const handleModelPlaced = (position, normal) => {
+    setModelPosition(position);
+    setIsModelPlaced(true);
+    console.log('Model placed at:', position, 'with normal:', normal);
   };
 
   return (
@@ -143,6 +254,8 @@ function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack 
               <ARCanvas
                 camera={{ position: [0, 0, 5], fov: 50 }}
                 style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
+                onSessionStart={handleSessionStart}
+                onSessionEnd={handleSessionEnd}
               >
                 <ambientLight intensity={0.5} />
                 <directionalLight position={[10, 10, 5]} intensity={1} />
@@ -159,9 +272,22 @@ function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack 
                   position={modelPosition}
                   rotation={[0, 0, 0]}
                   scale={[1, 1, 1]}
+                  isARActive={isARActive}
+                />
+                <ARPlacement
+                  selectedModel={selectedModel}
+                  placementMode={placementMode}
+                  onModelPlaced={handleModelPlaced}
+                  modelPosition={modelPosition}
+                  setModelPosition={setModelPosition}
                 />
                 <DefaultXRControllers />
                 <Hands />
+                <ARSessionManager 
+                  onSessionStart={handleSessionStart}
+                  onSessionEnd={handleSessionEnd}
+                  isARActive={isARActive}
+                />
               </ARCanvas>
             )}
 
@@ -172,16 +298,37 @@ function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack 
                   <p>Placement Mode: <strong>{placementMode}</strong></p>
                   <p className="instructions">{placementInstructions}</p>
 
-                      <div style={{ marginTop: 12, textAlign: 'left', background: 'rgba(255,255,255,0.06)', padding: 8, borderRadius: 8 }}>
-                        <strong>Diagnostics</strong>
-                        <div style={{ fontSize: 12, color: '#fff', marginTop: 6 }}>
-                          <div>navigator.xr: {String(diagnostics.navigatorXR)}</div>
-                          <div>isARSupported: {String(diagnostics.isARSupported)}</div>
-                          <div>protocol: {diagnostics.protocol}</div>
-                          <div style={{ wordBreak: 'break-word' }}>UA: {diagnostics.userAgent}</div>
-                          <div>Status: {diagnostics.arStatusMessage}</div>
-                        </div>
+                  {arError && (
+                    <div style={{ 
+                      marginTop: 12, 
+                      padding: 12, 
+                      background: 'rgba(220, 53, 69, 0.2)', 
+                      border: '1px solid rgba(220, 53, 69, 0.5)',
+                      borderRadius: 8,
+                      color: '#ff6b6b'
+                    }}>
+                      <strong>Error:</strong> {arError}
+                    </div>
+                  )}
+
+                  <div style={{ 
+                    marginTop: 12, 
+                    textAlign: 'left', 
+                    background: 'rgba(255,255,255,0.06)', 
+                    padding: 8, 
+                    borderRadius: 8 
+                  }}>
+                    <strong>Status</strong>
+                    <div style={{ fontSize: 12, color: '#fff', marginTop: 6 }}>
+                      <div>WebXR Support: {String(diagnostics.isARSupported)}</div>
+                      <div>Camera Permission: {cameraPermission === null ? 'Checking...' : String(cameraPermission)}</div>
+                      <div>Secure Context: {String(diagnostics.isSecureContext)}</div>
+                      <div>Protocol: {diagnostics.protocol}</div>
+                      <div style={{ wordBreak: 'break-word', fontSize: 10, marginTop: 4 }}>
+                        {diagnostics.arStatusMessage}
                       </div>
+                    </div>
+                  </div>
                   
                   {isDesktop ? (
                     <div className="desktop-ar-options">
@@ -207,12 +354,17 @@ function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack 
                       <XRButton
                         className="start-ar-button"
                         onClick={startAR}
-                        disabled={!isARSupported}
+                        disabled={!isARSupported || cameraPermission === false}
                       >
-                        Start AR Experience
+                        {cameraPermission === false ? 'Camera Permission Required' : 'Start AR Experience'}
                       </XRButton>
                       {!isARSupported && (
                         <div className="status-message" style={{ marginTop: '8px' }}>{arStatusMessage}</div>
+                      )}
+                      {cameraPermission === false && (
+                        <div className="status-message" style={{ marginTop: '8px', color: '#ff6b6b' }}>
+                          Please allow camera access to use AR features
+                        </div>
                       )}
                     </div>
                   )}
@@ -250,6 +402,33 @@ function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack 
                 </button>
                 <div className="ar-instructions">
                   <p>{placementInstructions}</p>
+                  {isSessionActive && (
+                    <p style={{ color: '#4CAF50', fontWeight: 'bold' }}>
+                      AR Session Active - Camera is running
+                    </p>
+                  )}
+                  {isModelPlaced && (
+                    <p style={{ color: '#2196F3', fontWeight: 'bold' }}>
+                      Model placed successfully! You can move around to view it.
+                    </p>
+                  )}
+                  {!isModelPlaced && isSessionActive && (
+                    <div style={{ 
+                      background: 'rgba(0, 0, 0, 0.8)', 
+                      padding: '15px', 
+                      borderRadius: '8px', 
+                      marginTop: '10px',
+                      textAlign: 'center'
+                    }}>
+                      <h4 style={{ margin: '0 0 10px 0', color: '#667eea' }}>AR Placement</h4>
+                      <p style={{ margin: '5px 0', fontSize: '14px' }}>
+                        {placementMode === 'floor' 
+                          ? 'Point your device at the floor and tap to place the model'
+                          : 'Point your device at a wall and tap to place the model'
+                        }
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
