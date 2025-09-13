@@ -145,17 +145,20 @@ function WallDetectionAR({ selectedModel, scale, position, rotation, onPlacement
 
       await rendererRef.current.xr.setSession(session);
 
-      // Get reference space
-      const refSpace = await session.requestReferenceSpace('local');
-      setReferenceSpace(refSpace);
+      // Use both local (content) and viewer (hit-test) reference spaces
+      const localRef = await session.requestReferenceSpace('local');
+      const viewerRef = await session.requestReferenceSpace('viewer');
+      setReferenceSpace(localRef);
 
-      // Get hit test source
-      const hitTestSource = await session.requestHitTestSource({ space: refSpace });
-      setHitTestSource(hitTestSource);
+      // Request hit test source against the viewer space
+      const hitSource = await session.requestHitTestSource({ space: viewerRef });
+      setHitTestSource(hitSource);
 
       // Add event listeners
       session.addEventListener('end', onSessionEnd);
       session.addEventListener('select', onSelect);
+
+      setStatusMessage('AR session dimulai. Ketuk layar untuk menempatkan model.');
 
     } catch (error) {
       console.error('AR session error:', error);
@@ -177,31 +180,44 @@ function WallDetectionAR({ selectedModel, scale, position, rotation, onPlacement
     if (!hitTestSource || !referenceSpace) return;
 
     const frame = event.frame;
-    // Fallback: if hit-test results unavailable or complex, place model at a default distance in front of camera
+    // Try hit test results first
     try {
       const hitTestResults = frame.getHitTestResults ? frame.getHitTestResults(hitTestSource) : [];
 
       if (hitTestResults && hitTestResults.length > 0) {
         const hit = hitTestResults[0];
         const pose = hit.getPose(referenceSpace);
-        if (pose) {
-          const position = pose.transform.position;
-          const orientation = pose.transform.orientation;
-          placeModel(position, orientation);
+        const viewerPose = frame.getViewerPose(referenceSpace);
+
+        if (pose && viewerPose && viewerPose.views && viewerPose.views.length > 0) {
+          const camPos = viewerPose.transform.position;
+          const hitPos = pose.transform.position;
+
+          // Classify as floor if hit is significantly below camera
+          const isFloorHit = (hitPos.y <= (camPos.y - 0.3));
+
+          // Place model and provide feedback
+          placeModel(hitPos, pose.transform.orientation);
+          setStatusMessage('Model ditempatkan pada ' + (isFloorHit ? 'lantai' : 'dinding'));
           return;
         }
       }
     } catch (err) {
-      console.warn('Hit test fallback:', err);
+      console.warn('Hit test error:', err);
     }
 
-    // Default placement: 1 meter in front of the camera
-    if (rendererRef.current && rendererRef.current.xr && rendererRef.current.xr.getCamera) {
-      const cam = rendererRef.current.xr.getCamera();
-      const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.quaternion);
-      const pos = cam.position.clone().add(dir.multiplyScalar(1.0));
-      const orientation = cam.quaternion;
-      placeModel({ x: pos.x, y: pos.y, z: pos.z }, { x: orientation.x, y: orientation.y, z: orientation.z, w: orientation.w });
+    // Fallback placement: 1m in front of camera if hit test unavailable
+    try {
+      if (rendererRef.current && rendererRef.current.xr && rendererRef.current.xr.getCamera) {
+        const cam = rendererRef.current.xr.getCamera();
+        const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.quaternion);
+        const pos = cam.position.clone().add(dir.multiplyScalar(1.0));
+        const orientation = cam.quaternion;
+        placeModel({ x: pos.x, y: pos.y, z: pos.z }, { x: orientation.x, y: orientation.y, z: orientation.z, w: orientation.w });
+        setStatusMessage('Model ditempatkan di depan kamera (fallback)');
+      }
+    } catch (err) {
+      console.warn('Fallback placement error:', err);
     }
   };
 
