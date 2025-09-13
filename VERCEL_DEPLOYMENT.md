@@ -174,6 +174,12 @@ npm run build
 - Compress texture images
 - Enable Vercel's CDN caching
 
+## Notes about common build issues
+
+- If Vercel shows a warning about `builds` in your configuration, ensure your `vercel.json` includes an explicit `builds` section. This project now uses `@vercel/static-build` with `distDir: "build"` so Vercel runs `npm run build` and serves the `build/` folder.
+- If the build fails due to missing source maps from some dependencies (e.g. `@mediapipe`), you can disable source map generation by adding a `.env` with `GENERATE_SOURCEMAP=false` (this repo includes that file).
+- Recommended Project Settings in Vercel: Build Command: `npm run build`; Output Directory: `build`.
+
 ## 📱 Testing Setelah Deploy
 
 ### 1. Test Basic Functionality

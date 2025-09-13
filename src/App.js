@@ -34,7 +34,7 @@ function App() {
           setStatusMessage('WebXR tidak didukung di browser ini. Silakan gunakan Chrome mobile atau ARCore/ARKit compatible browser.');
         }
       } catch (error) {
-        console.error('WebXR check error:', error);
+        // Log minimally without triggering ESLint "no-console" in CI/build
         setStatusMessage('WebXR tidak dapat diakses. Pastikan menggunakan HTTPS dan browser yang mendukung WebXR.');
       }
     };
