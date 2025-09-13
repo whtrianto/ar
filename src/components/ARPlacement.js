@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useXR } from '@react-three/xr';
 import * as THREE from 'three';
@@ -12,7 +12,7 @@ function ARPlacement({
 }) {
   const { camera, raycaster, scene } = useThree();
   const { isPresenting } = useXR();
-  const [isPlaced, setIsPlaced] = useState(false);
+  const [, setIsPlaced] = useState(false);
   const [hitPoint, setHitPoint] = useState(null);
   const [hitNormal, setHitNormal] = useState(null);
   const [isValidPlacement, setIsValidPlacement] = useState(false);
@@ -166,14 +166,14 @@ function ARPlacement({
   });
 
   // Handle tap/click for placement
-  const handlePlacement = () => {
+  const handlePlacement = useCallback(() => {
     if (!isValidPlacement || !hitPoint) return;
     
     const newPosition = hitPoint.toArray();
     setModelPosition(newPosition);
     setIsPlaced(true);
     onModelPlaced && onModelPlaced(newPosition, hitNormal);
-  };
+  }, [isValidPlacement, hitPoint, hitNormal, setModelPosition, onModelPlaced]);
 
   // Listen for tap events
   useEffect(() => {
@@ -191,7 +191,7 @@ function ARPlacement({
       window.removeEventListener('click', handleTap);
       window.removeEventListener('touchend', handleTap);
     };
-  }, [isPresenting, isValidPlacement, hitPoint]);
+  }, [isPresenting, isValidPlacement, hitPoint, handlePlacement]);
 
   if (!isPresenting || !selectedModel) return null;
 

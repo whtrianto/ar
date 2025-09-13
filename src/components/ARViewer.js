@@ -120,6 +120,7 @@ function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack 
     setIsSessionActive(true);
     setArError(null);
     setIsModelPlaced(false); // Reset placement when starting new session
+    // eslint-disable-next-line no-console
     console.log('AR Session started');
   };
 
@@ -128,6 +129,7 @@ function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack 
     setIsARActive(false);
     setIsModelPlaced(false);
     setArError(null);
+    // eslint-disable-next-line no-console
     console.log('AR Session ended');
   };
 
@@ -163,6 +165,7 @@ function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack 
       setIsARActive(true);
     } catch (error) {
       setArError('Failed to start AR: ' + error.message);
+      // eslint-disable-next-line no-console
       console.error('AR start error:', error);
     }
   };
@@ -172,6 +175,7 @@ function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack 
     setIsSessionActive(false);
     setIsModelPlaced(false);
     setArError(null);
+    // eslint-disable-next-line no-console
     console.log('AR stopped by user');
   };
 
@@ -182,6 +186,7 @@ function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack 
         stopAR();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handlePlacementModeChange = (mode) => {
@@ -192,6 +197,7 @@ function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack 
   const handleModelPlaced = (position, normal) => {
     setModelPosition(position);
     setIsModelPlaced(true);
+    // eslint-disable-next-line no-console
     console.log('Model placed at:', position, 'with normal:', normal);
   };
 
