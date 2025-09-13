@@ -9,6 +9,7 @@ function WallDetectionAR({ selectedModel, scale, position, rotation, onPlacement
   const cameraRef = useRef();
   const [isARSupported, setIsARSupported] = useState(false);
   const [isPlaced, setIsPlaced] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
   const [placementMode, setPlacementMode] = useState('floor');
   const [hitTestSource, setHitTestSource] = useState(null);
   const [referenceSpace, setReferenceSpace] = useState(null);
@@ -28,10 +29,12 @@ function WallDetectionAR({ selectedModel, scale, position, rotation, onPlacement
         return;
       }
 
-      setIsARSupported(true);
-      setupThreeJS();
+  setIsARSupported(true);
+  setStatusMessage('AR ready. Tekan Start untuk memulai sesi AR.');
+  setupThreeJS();
     } catch (error) {
-      console.error('AR initialization error:', error);
+  console.error('AR initialization error:', error);
+  setStatusMessage('Inisialisasi AR gagal: ' + (error.message || String(error)));
     }
   }, []);
 
@@ -156,6 +159,11 @@ function WallDetectionAR({ selectedModel, scale, position, rotation, onPlacement
 
     } catch (error) {
       console.error('AR session error:', error);
+      if (error && /Permission|Allowed|camera/i.test(error.message || '')) {
+        setStatusMessage('Akses kamera ditolak. Izinkan untuk menggunakan AR.');
+      } else {
+        setStatusMessage('Gagal memulai sesi AR: ' + (error.message || String(error)));
+      }
     }
   };
 

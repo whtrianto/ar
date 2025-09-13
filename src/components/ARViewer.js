@@ -22,6 +22,8 @@ function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack 
   const [modelPosition, setModelPosition] = useState([0, 0, -2]);
   const [isDesktop, setIsDesktop] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [isARSupported, setIsARSupported] = useState(false);
+  const [arStatusMessage, setArStatusMessage] = useState('');
 
   useEffect(() => {
     // Check if desktop
@@ -36,6 +38,27 @@ function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack 
       setModelPosition([0, 0, -1]);
     }
   }, [placementMode]);
+
+  useEffect(() => {
+    // Detect WebXR support for AR
+    const checkXR = async () => {
+      try {
+        if (navigator.xr && navigator.xr.isSessionSupported) {
+          const supported = await navigator.xr.isSessionSupported('immersive-ar');
+          setIsARSupported(supported);
+          setArStatusMessage(supported ? 'WebXR AR supported' : 'WebXR AR not supported');
+        } else {
+          setIsARSupported(false);
+          setArStatusMessage('WebXR not available in this browser');
+        }
+      } catch (err) {
+        setIsARSupported(false);
+        setArStatusMessage('Error detecting WebXR: ' + (err.message || err));
+      }
+    };
+
+    checkXR();
+  }, []);
 
   const startAR = async () => {
     if (!selectedModel) return;
@@ -149,6 +172,7 @@ function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack 
                       <XRButton
                         className="start-ar-button"
                         onClick={startAR}
+                        disabled={!isARSupported}
                       >
                         Try WebXR (Experimental)
                       </XRButton>
@@ -157,12 +181,18 @@ function ARViewer({ selectedModel, placementMode, onPlacementModeChange, onBack 
                       </p>
                     </div>
                   ) : (
-                    <XRButton
-                      className="start-ar-button"
-                      onClick={startAR}
-                    >
-                      Start AR Experience
-                    </XRButton>
+                    <div>
+                      <XRButton
+                        className="start-ar-button"
+                        onClick={startAR}
+                        disabled={!isARSupported}
+                      >
+                        Start AR Experience
+                      </XRButton>
+                      {!isARSupported && (
+                        <div className="status-message" style={{ marginTop: '8px' }}>{arStatusMessage}</div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

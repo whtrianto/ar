@@ -4,6 +4,12 @@ function ModelViewerAR({ selectedModel, scale, position, rotation, onPlacement }
   const modelViewerRef = useRef();
   const [isARSupported, setIsARSupported] = useState(false);
   const [placementMode, setPlacementMode] = useState('floor'); // 'floor' or 'wall'
+  const [isIOS, setIsIOS] = useState(false);
+
+  useEffect(() => {
+    const ua = navigator.userAgent || '';
+    setIsIOS(/iPhone|iPad|iPod/.test(ua));
+  }, []);
 
   useEffect(() => {
     // Check AR support
@@ -101,6 +107,12 @@ function ModelViewerAR({ selectedModel, scale, position, rotation, onPlacement }
             <li>Safari (iOS) dengan ARKit</li>
             <li>Chrome Desktop dengan WebXR flags</li>
           </ul>
+          {isIOS && selectedModel && !selectedModel.url.endsWith('.usdz') && (
+            <div style={{ marginTop: 12 }}>
+              <strong>iOS detected:</strong>
+              <p>Untuk AR di iOS, file .usdz direkomendasikan. Anda dapat menyediakan versi .usdz atau gunakan Quick Look dengan file .usdz.</p>
+            </div>
+          )}
         </div>
       )}
     </div>

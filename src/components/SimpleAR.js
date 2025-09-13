@@ -52,7 +52,12 @@ function SimpleAR({ selectedModel, scale, position, rotation, onPlacement }) {
 
     } catch (error) {
       console.error('AR session error:', error);
-      setStatusMessage('Gagal memulai AR session: ' + error.message);
+      // Better feedback for common issues
+      if (error && /Permission|Allowed|camera/i.test(error.message || '')) {
+        setStatusMessage('Akses kamera ditolak. Izinkan akses kamera untuk menggunakan AR.');
+      } else {
+        setStatusMessage('Gagal memulai AR session: ' + (error.message || String(error)));
+      }
     }
   };
 
