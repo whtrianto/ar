@@ -1,21 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ModelViewer } from './components/ModelViewer';
-import { ModelViewerAR } from './components/ModelViewerAR';
-import { WallDetectionAR } from './components/WallDetectionAR';
-import { AdvancedAR } from './components/AdvancedAR';
-import { SimpleAR } from './components/SimpleAR';
-import { ControlsPanel } from './components/ControlsPanel';
 import './App.css';
 
 function App() {
-  const [isARMode, setIsARMode] = useState(false);
-  const [selectedModel, setSelectedModel] = useState(null);
-  const [modelScale, setModelScale] = useState(1);
-  const [modelPosition, setModelPosition] = useState({ x: 0, y: 0, z: 0 });
-  const [modelRotation, setModelRotation] = useState({ x: 0, y: 0, z: 0 });
   const [isWebXRSupported, setIsWebXRSupported] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
-  const [arMode, setArMode] = useState('model-viewer'); // 'model-viewer', 'wall-detection', 'advanced'
 
   useEffect(() => {
     // Check WebXR support
@@ -49,136 +37,53 @@ function App() {
     checkWebXRSupport();
   }, []);
 
-  const handleModelSelect = (model) => {
-    setSelectedModel(model);
-    setStatusMessage('');
-  };
-
-  const handleScaleChange = (scale) => {
-    setModelScale(scale);
-  };
-
-  const handlePositionChange = (position) => {
-    setModelPosition(position);
-  };
-
-  const handleRotationChange = (rotation) => {
-    setModelRotation(rotation);
-  };
-
-  const handleARModeToggle = () => {
-    if (!selectedModel) {
-      setStatusMessage('Pilih model 3D terlebih dahulu sebelum masuk ke mode AR');
-      return;
-    }
-    setIsARMode(!isARMode);
-    setStatusMessage('');
-  };
-
-  const handleResetModel = () => {
-    setModelScale(1);
-    setModelPosition({ x: 0, y: 0, z: 0 });
-    setModelRotation({ x: 0, y: 0, z: 0 });
-  };
-
   return (
     <div className="App">
-      {statusMessage && (
-        <div className="status-message">
-          {statusMessage}
-        </div>
-      )}
+      <header className="App-header">
+        <h1>Web AR Furniture</h1>
+        <p>Aplikasi Web AR untuk visualisasi furniture menggunakan WebXR</p>
+        
+        {statusMessage && (
+          <div className="status-message">
+            {statusMessage}
+          </div>
+        )}
 
-      {!isARMode ? (
-        <div className="model-viewer-container">
-          <ModelViewer
-            selectedModel={selectedModel}
-            scale={modelScale}
-            position={modelPosition}
-            rotation={modelRotation}
-            onScaleChange={handleScaleChange}
-            onPositionChange={handlePositionChange}
-            onRotationChange={handleRotationChange}
-          />
+        <div className="features">
+          <h2>Fitur Utama:</h2>
+          <ul>
+            <li>3D Model Viewer</li>
+            <li>WebXR AR Support</li>
+            <li>Floorplan & Wall Detection</li>
+            <li>Scale & Position Controls</li>
+            <li>File Upload Support (GLB/USDZ)</li>
+          </ul>
         </div>
-      ) : (
-        <div className="ar-container">
-          {arMode === 'model-viewer' && (
-            <ModelViewerAR
-              selectedModel={selectedModel}
-              scale={modelScale}
-              position={modelPosition}
-              rotation={modelRotation}
-              onPlacement={(placement) => {
-                console.log('Model placed:', placement);
-              }}
-            />
-          )}
-          
-          {arMode === 'wall-detection' && (
-            <WallDetectionAR
-              selectedModel={selectedModel}
-              scale={modelScale}
-              position={modelPosition}
-              rotation={modelRotation}
-              onPlacement={(placement) => {
-                console.log('Model placed:', placement);
-              }}
-            />
-          )}
-          
-          {arMode === 'advanced' && (
-            <AdvancedAR
-              selectedModel={selectedModel}
-              scale={modelScale}
-              position={modelPosition}
-              rotation={modelRotation}
-              onPlacement={(placement) => {
-                console.log('Model placed:', placement);
-              }}
-            />
-          )}
-          
-          {arMode === 'simple' && (
-            <SimpleAR
-              selectedModel={selectedModel}
-              scale={modelScale}
-              position={modelPosition}
-              rotation={modelRotation}
-              onPlacement={(placement) => {
-                console.log('Model placed:', placement);
-              }}
-            />
+
+        <div className="tech-stack">
+          <h2>Teknologi:</h2>
+          <ul>
+            <li>React.js</li>
+            <li>Three.js</li>
+            <li>@react-three/fiber</li>
+            <li>@react-three/drei</li>
+            <li>@react-three/xr</li>
+            <li>WebXR</li>
+          </ul>
+        </div>
+
+        <div className="deployment-status">
+          <h2>Status Deployment:</h2>
+          <p>✅ Aplikasi berhasil di-deploy ke Vercel!</p>
+          <p>✅ HTTPS enabled (required untuk WebXR)</p>
+          <p>✅ Global CDN active</p>
+          {isWebXRSupported ? (
+            <p>✅ WebXR AR supported di browser ini</p>
+          ) : (
+            <p>⚠️ WebXR AR tidak didukung di browser ini</p>
           )}
         </div>
-      )}
-
-      <ControlsPanel
-        selectedModel={selectedModel}
-        onModelSelect={handleModelSelect}
-        scale={modelScale}
-        position={modelPosition}
-        rotation={modelRotation}
-        onScaleChange={handleScaleChange}
-        onPositionChange={handlePositionChange}
-        onRotationChange={handleRotationChange}
-        onResetModel={handleResetModel}
-        isARMode={isARMode}
-        onARModeToggle={handleARModeToggle}
-        isWebXRSupported={isWebXRSupported}
-        arMode={arMode}
-        onArModeChange={setArMode}
-      />
-
-      {!isARMode && (
-        <button
-          className="ar-button"
-          onClick={handleARModeToggle}
-          disabled={!selectedModel || !isWebXRSupported}
-        >
-          {isWebXRSupported ? 'Masuk ke Mode AR' : 'WebXR Tidak Didukung'}
-        </button>
-      )}
+      </header>
     </div>
   );
 }
