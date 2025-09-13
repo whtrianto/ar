@@ -59,7 +59,7 @@ function App() {
     <div className="App">
       <header className="app-header">
         <div className="header-content">
-          <h1>Web AR Furniture</h1>
+          <h1>Web AR Furniture1</h1>
           <p>Easily display interactive 3D models on the web & in AR</p>
           
           {statusMessage && (
