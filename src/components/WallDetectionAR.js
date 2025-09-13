@@ -169,24 +169,31 @@ function WallDetectionAR({ selectedModel, scale, position, rotation, onPlacement
     if (!hitTestSource || !referenceSpace) return;
 
     const frame = event.frame;
-    const hitTestResults = frame.getHitTestResults(hitTestSource);
+    // Fallback: if hit-test results unavailable or complex, place model at a default distance in front of camera
+    try {
+      const hitTestResults = frame.getHitTestResults ? frame.getHitTestResults(hitTestSource) : [];
 
-    if (hitTestResults.length > 0) {
-      const hit = hitTestResults[0];
-      const pose = hit.getPose(referenceSpace);
-
-      if (pose) {
-        const position = pose.transform.position;
-        const orientation = pose.transform.orientation;
-
-        // Determine if it's floor or wall based on normal
-        const normal = hit.hitTestResults[0].hitTestResult.getPose(referenceSpace).transform.orientation;
-        const isWall = Math.abs(normal.y) < 0.5; // Wall if normal is not mostly vertical
-
-        if ((placementMode === 'floor' && !isWall) || (placementMode === 'wall' && isWall)) {
+      if (hitTestResults && hitTestResults.length > 0) {
+        const hit = hitTestResults[0];
+        const pose = hit.getPose(referenceSpace);
+        if (pose) {
+          const position = pose.transform.position;
+          const orientation = pose.transform.orientation;
           placeModel(position, orientation);
+          return;
         }
       }
+    } catch (err) {
+      console.warn('Hit test fallback:', err);
+    }
+
+    // Default placement: 1 meter in front of the camera
+    if (rendererRef.current && rendererRef.current.xr && rendererRef.current.xr.getCamera) {
+      const cam = rendererRef.current.xr.getCamera();
+      const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.quaternion);
+      const pos = cam.position.clone().add(dir.multiplyScalar(1.0));
+      const orientation = cam.quaternion;
+      placeModel({ x: pos.x, y: pos.y, z: pos.z }, { x: orientation.x, y: orientation.y, z: orientation.z, w: orientation.w });
     }
   };
 

@@ -36,7 +36,7 @@ function SimpleAR({ selectedModel, scale, position, rotation, onPlacement }) {
       }
 
       await navigator.xr.requestSession('immersive-ar', {
-        requiredFeatures: ['local']
+        requiredFeatures: ['local', 'hit-test']
       });
 
       setStatusMessage('AR session dimulai! Gerakkan kamera untuk melihat model');
