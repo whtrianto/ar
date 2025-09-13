@@ -1,197 +1,186 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Environment, ContactShadows } from '@react-three/drei';
+import { OrbitControls, Environment, ContactShadows, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import { modelLoader } from '../utils/modelLoader';
 
-function ModelViewer({ selectedModel, scale, position, rotation, onScaleChange, onPositionChange, onRotationChange }) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [modelInfo, setModelInfo] = useState(null);
+const SAMPLE_MODELS = [
+  {
+    id: 'chair-1',
+    name: 'Modern Chair',
+    url: '/models/sample-chair.glb',
+    description: 'Kursi modern dengan desain minimalis',
+    category: 'furniture',
+    arPlacement: 'floor'
+  },
+  {
+    id: 'lamp-1',
+    name: 'Table Lamp',
+    url: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb',
+    description: 'Lampu meja dengan desain modern',
+    category: 'lighting',
+    arPlacement: 'floor'
+  },
+  {
+    id: 'picture-1',
+    name: 'Wall Art',
+    url: 'https://modelviewer.dev/shared-assets/models/NeilArmstrong.glb',
+    description: 'Lukisan dinding untuk dekorasi',
+    category: 'decoration',
+    arPlacement: 'wall'
+  }
+];
 
-  const handleModelLoad = useCallback((info) => {
-    setIsLoading(false);
-    setError(null);
-    setModelInfo(info);
-  }, []);
-
-  const handleModelError = useCallback((err) => {
-    setIsLoading(false);
-    setError('Gagal memuat model 3D. Pastikan file format GLB atau USDZ valid.');
-    console.error('Model loading error:', err);
-  }, []);
-
-  const handleLoadingStart = useCallback(() => {
-    setIsLoading(true);
-  }, []);
-
-  return (
-    <div className="model-viewer-container">
-      <Canvas
-        camera={{ position: [0, 1.6, 3], fov: 75 }}
-        gl={{ 
-          antialias: true,
-          alpha: true,
-          powerPreference: "high-performance"
-        }}
-        style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
-      >
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[10, 10, 5]} intensity={1} />
-        <pointLight position={[-10, -10, -10]} intensity={0.5} />
-        
-        <Environment preset="studio" />
-        
-        {selectedModel ? (
-          <Model3D
-            model={selectedModel}
-            scale={scale}
-            position={position}
-            rotation={rotation}
-            onLoad={handleModelLoad}
-            onError={handleModelError}
-            onLoadingStart={handleLoadingStart}
-          />
-        ) : (
-          <PlaceholderModel />
-        )}
-        
-        <ContactShadows
-          position={[0, -0.5, 0]}
-          opacity={0.25}
-          scale={10}
-          blur={1.5}
-          far={4.5}
-        />
-        
-        <OrbitControls
-          enablePan={true}
-          enableZoom={true}
-          enableRotate={true}
-          minPolarAngle={0}
-          maxPolarAngle={Math.PI / 2}
-        />
-      </Canvas>
-      
-      {isLoading && (
-        <div className="loading-overlay">
-          <div className="loading-spinner"></div>
-          <p>Memuat model 3D...</p>
-        </div>
-      )}
-      
-      {error && (
-        <div className="error-overlay">
-          <p>{error}</p>
-        </div>
-      )}
-      
-      {!selectedModel && (
-        <div className="no-model-overlay">
-          <h3>Pilih Model 3D</h3>
-          <p>Gunakan panel kontrol di sebelah kiri untuk memilih atau upload model furniture</p>
-        </div>
-      )}
-
-      {modelInfo && (
-        <div className="model-info-overlay">
-          <h4>Model Info</h4>
-          <p>Vertices: {modelInfo.vertices.toLocaleString()}</p>
-          <p>Faces: {modelInfo.faces.toLocaleString()}</p>
-          <p>Materials: {modelInfo.materials}</p>
-          <p>Animations: {modelInfo.animations}</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Model3D({ model, scale, position, rotation, onLoad, onError, onLoadingStart }) {
-  const meshRef = useRef();
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [loadedModel, setLoadedModel] = useState(null);
-
-  const loadModel = useCallback(async () => {
-    if (!model?.url) return;
-    
-    try {
-      onLoadingStart();
-      let loadedModelData;
-      
-      if (model.url.endsWith('.usdz')) {
-        loadedModelData = await modelLoader.loadUSDZ(model.url);
-      } else {
-        loadedModelData = await modelLoader.loadGLB(model.url);
-      }
-      
-      setLoadedModel(loadedModelData);
-      setIsLoaded(true);
-      
-      const info = modelLoader.getModelInfo(loadedModelData);
-      onLoad(info);
-    } catch (error) {
-      console.error('Model loading error:', error);
-      onError(error);
-    }
-  }, [model?.url, onLoad, onError, onLoadingStart]);
-
-  useEffect(() => {
-    if (model?.url) {
-      loadModel();
-    }
-  }, [model?.url, loadModel]);
-
+function Model({ url, position, rotation, scale }) {
+  const { scene } = useGLTF(url);
+  
   useFrame(() => {
-    if (meshRef.current && isLoaded) {
-      // Update model properties
-      meshRef.current.scale.setScalar(scale);
-      meshRef.current.position.set(position.x, position.y, position.z);
-      meshRef.current.rotation.set(
-        THREE.MathUtils.degToRad(rotation.x),
-        THREE.MathUtils.degToRad(rotation.y),
-        THREE.MathUtils.degToRad(rotation.z)
-      );
+    if (scene) {
+      scene.rotation.y += 0.005;
     }
   });
 
-  if (!isLoaded || !loadedModel) {
-    return null;
-  }
-
   return (
-    <primitive
-      ref={meshRef}
-      object={loadedModel.scene.clone()}
+    <primitive 
+      object={scene} 
+      position={position} 
+      rotation={rotation} 
       scale={scale}
-      position={[position.x, position.y, position.z]}
-      rotation={[
-        THREE.MathUtils.degToRad(rotation.x),
-        THREE.MathUtils.degToRad(rotation.y),
-        THREE.MathUtils.degToRad(rotation.z)
-      ]}
     />
   );
 }
 
-function PlaceholderModel() {
-  const meshRef = useRef();
+function ModelViewer({ selectedModel, onModelSelect }) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [modelInfo, setModelInfo] = useState(null);
 
-  useFrame((state) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.y = state.clock.elapsedTime * 0.5;
+  useEffect(() => {
+    if (selectedModel) {
+      setIsLoading(true);
+      setError(null);
+      setModelInfo({
+        name: selectedModel.name,
+        description: selectedModel.description,
+        category: selectedModel.category
+      });
+      setIsLoading(false);
     }
-  });
+  }, [selectedModel]);
+
+  const handleModelUpload = (event) => {
+    const file = event.target.files[0];
+    if (file && (file.name.endsWith('.glb') || file.name.endsWith('.gltf'))) {
+      const url = URL.createObjectURL(file);
+      const newModel = {
+        id: 'uploaded-' + Date.now(),
+        name: file.name.replace(/\.(glb|gltf)$/, ''),
+        url: url,
+        description: 'Uploaded model',
+        category: 'custom',
+        arPlacement: 'floor'
+      };
+      onModelSelect(newModel);
+    }
+  };
 
   return (
-    <mesh ref={meshRef} position={[0, 0, 0]}>
-      <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial 
-        color="#667eea" 
-        transparent 
-        opacity={0.7}
-        wireframe
-      />
-    </mesh>
+    <div className="model-viewer-container">
+      <div className="model-viewer-header">
+        <h2>3D Model Viewer</h2>
+        <div className="model-controls">
+          <input
+            type="file"
+            accept=".glb,.gltf"
+            onChange={handleModelUpload}
+            className="file-input"
+            id="model-upload"
+          />
+          <label htmlFor="model-upload" className="upload-button">
+            Upload Model
+          </label>
+        </div>
+      </div>
+
+      <div className="model-viewer-content">
+        {selectedModel ? (
+          <div className="model-container">
+            <Canvas
+              camera={{ position: [0, 0, 5], fov: 50 }}
+              style={{ width: '100%', height: '500px', backgroundColor: '#f0f0f0' }}
+            >
+              <ambientLight intensity={0.5} />
+              <directionalLight position={[10, 10, 5]} intensity={1} />
+              <Environment preset="studio" />
+              <ContactShadows 
+                position={[0, -1, 0]} 
+                opacity={0.25} 
+                scale={10} 
+                blur={1.5} 
+                far={4} 
+              />
+              <Model 
+                url={selectedModel.url}
+                position={[0, 0, 0]}
+                rotation={[0, 0, 0]}
+                scale={[1, 1, 1]}
+              />
+              <OrbitControls 
+                enablePan={true}
+                enableZoom={true}
+                enableRotate={true}
+                minDistance={2}
+                maxDistance={10}
+              />
+            </Canvas>
+
+            {isLoading && (
+              <div className="loading-overlay">
+                <div className="loading-spinner"></div>
+                <p>Loading model...</p>
+              </div>
+            )}
+
+            {error && (
+              <div className="error-message">
+                <p>Error: {error}</p>
+              </div>
+            )}
+
+            {modelInfo && (
+              <div className="model-info">
+                <h3>{modelInfo.name}</h3>
+                <p>{modelInfo.description}</p>
+                <div className="model-tags">
+                  <span className="tag">{modelInfo.category}</span>
+                  <span className="tag">{selectedModel.arPlacement}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="no-model-placeholder">
+            <div className="placeholder-content">
+              <h3>Select a 3D Model</h3>
+              <p>Choose a model from the gallery below or upload your own</p>
+              <div className="placeholder-features">
+                <div className="feature">
+                  <span className="icon">🎯</span>
+                  <span>AR Placement</span>
+                </div>
+                <div className="feature">
+                  <span className="icon">📱</span>
+                  <span>Mobile Ready</span>
+                </div>
+                <div className="feature">
+                  <span className="icon">🔄</span>
+                  <span>Interactive</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 

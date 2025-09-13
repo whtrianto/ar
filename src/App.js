@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
+import { ModelViewer } from './components/ModelViewer';
+import { ARViewer } from './components/ARViewer';
+import { ModelGallery } from './components/ModelGallery';
 import './App.css';
 
 function App() {
+  const [selectedModel, setSelectedModel] = useState(null);
+  const [isARMode, setIsARMode] = useState(false);
   const [isWebXRSupported, setIsWebXRSupported] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
+  const [placementMode, setPlacementMode] = useState('floor'); // 'floor' or 'wall'
 
   useEffect(() => {
     // Check WebXR support
     const checkWebXRSupport = async () => {
       try {
-        // Check if we're on HTTPS or localhost
         const isSecureContext = window.isSecureContext || window.location.hostname === 'localhost';
         
         if (!isSecureContext) {
@@ -37,53 +42,75 @@ function App() {
     checkWebXRSupport();
   }, []);
 
+  const handleModelSelect = (model) => {
+    setSelectedModel(model);
+    setStatusMessage('');
+  };
+
+  const handleARModeToggle = () => {
+    if (!selectedModel) {
+      setStatusMessage('Pilih model 3D terlebih dahulu sebelum masuk ke mode AR');
+      return;
+    }
+    setIsARMode(!isARMode);
+    setStatusMessage('');
+  };
+
   return (
     <div className="App">
-      <header className="App-header">
-        <h1>Web AR Furniture</h1>
-        <p>Aplikasi Web AR untuk visualisasi furniture menggunakan WebXR</p>
-        
-        {statusMessage && (
-          <div className="status-message">
-            {statusMessage}
-          </div>
-        )}
-
-        <div className="features">
-          <h2>Fitur Utama:</h2>
-          <ul>
-            <li>3D Model Viewer</li>
-            <li>WebXR AR Support</li>
-            <li>Floorplan & Wall Detection</li>
-            <li>Scale & Position Controls</li>
-            <li>File Upload Support (GLB/USDZ)</li>
-          </ul>
-        </div>
-
-        <div className="tech-stack">
-          <h2>Teknologi:</h2>
-          <ul>
-            <li>React.js</li>
-            <li>Three.js</li>
-            <li>@react-three/fiber</li>
-            <li>@react-three/drei</li>
-            <li>@react-three/xr</li>
-            <li>WebXR</li>
-          </ul>
-        </div>
-
-        <div className="deployment-status">
-          <h2>Status Deployment:</h2>
-          <p>✅ Aplikasi berhasil di-deploy ke Vercel!</p>
-          <p>✅ HTTPS enabled (required untuk WebXR)</p>
-          <p>✅ Global CDN active</p>
-          {isWebXRSupported ? (
-            <p>✅ WebXR AR supported di browser ini</p>
-          ) : (
-            <p>⚠️ WebXR AR tidak didukung di browser ini</p>
+      <header className="app-header">
+        <div className="header-content">
+          <h1>Web AR Furniture</h1>
+          <p>Easily display interactive 3D models on the web & in AR</p>
+          
+          {statusMessage && (
+            <div className="status-message">
+              {statusMessage}
+            </div>
           )}
         </div>
       </header>
+
+      <main className="app-main">
+        {!isARMode ? (
+          <div className="viewer-container">
+            <div className="viewer-section">
+              <ModelViewer 
+                selectedModel={selectedModel}
+                onModelSelect={handleModelSelect}
+              />
+            </div>
+            
+            <div className="gallery-section">
+              <ModelGallery 
+                onModelSelect={handleModelSelect}
+                selectedModel={selectedModel}
+              />
+            </div>
+          </div>
+        ) : (
+          <ARViewer 
+            selectedModel={selectedModel}
+            placementMode={placementMode}
+            onPlacementModeChange={setPlacementMode}
+            onBack={() => setIsARMode(false)}
+          />
+        )}
+      </main>
+
+      <div className="ar-controls">
+        {!isARMode && selectedModel && (
+          <div className="ar-button-container">
+            <button 
+              className="ar-button"
+              onClick={handleARModeToggle}
+              disabled={!isWebXRSupported}
+            >
+              {isWebXRSupported ? 'View in AR' : 'AR Not Supported'}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
